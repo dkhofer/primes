@@ -45,6 +45,32 @@ describe "Primes" do
     it "works on positive composite numbers" do
       Primes.factorization(4).should eq [[2, 2]]
       Primes.factorization(1_007).should eq [[19, 1], [53, 1]]
+      24.factorization.should eq [[2, 3], [3, 1]]
+      7200.factorization.should eq [[2, 5], [3, 2], [5, 2]]
+    end
+
+    it "plays well with BigInts" do
+      Primes.factorization(BigInt.new(4)).should eq [[2, 2]]
+      Primes.factorization(BigInt.new(1_007)).should eq [[19, 1], [53, 1]]
+
+      Primes.factorization(BigInt.new(-1)).should eq [[-1, 1]]
+      Primes.factorization(BigInt.new(-4)).should eq [[-1, 1], [2, 2]]
+    end
+  end
+
+  context "struct Int" do
+    it "includes prime? and factorization" do
+      6.prime?.should be_false
+      6.factorization.should eq [[2, 1], [3, 1]]
+
+      3.prime?.should be_true
+      3.factorization.should eq [[3, 1]]
+
+      1_007.prime?.should be_false
+      1_007.factorization.should eq [[19, 1], [53, 1]]
+
+      BigInt.new(1_007).prime?.should be_false
+      BigInt.new(1_007).factorization.should eq [[19, 1], [53, 1]]
     end
   end
 end
