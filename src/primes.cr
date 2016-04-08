@@ -8,35 +8,49 @@ class Primes
     return true
   end
 
-  def self.factorization(n : Int32)
+  # NOTE(hofer): Need this because Math.sqrt doesn't handle BigInts.
+  def self.binary_search_sqrt(n)
+    sqrt = typeof(n).new(0)
+    log = n.to_s.split("").size * 3
+    (0..log + 1).reverse_each do |i|
+      layer = typeof(n).new(1) << i
+      if (sqrt + layer) * (sqrt + layer) <= n
+        sqrt += layer
+      end
+    end
+
+    sqrt
+  end
+
+  def self.factorization(n : Int)
     raise "Can't factor zero!" if n == 0
 
-    factors = [] of Array(Int32)
+    factors = [] of Array(typeof(n))
 
     if n < 0
-      factors << [-1, 1]
+      factors << [typeof(n).new(-1), typeof(n).new(1)]
       n = n.abs
     end
 
     if n == 2
-      factors << [2, 1]
-      n = 1
+      factors << [n, typeof(n).new(1)]
+      n = typeof(n).new(1)
     end
 
     current_number = n
-    divisor = 2
+    divisor = typeof(n).new(2)
 
     while current_number > 1
-      max_divisor_candidate = Math.sqrt(current_number).to_i + 1
+      max_divisor_candidate = binary_search_sqrt(current_number) + 1
       while divisor < max_divisor_candidate && current_number % divisor != 0
-        divisor += 1
+        divisor += typeof(n).new(1)
       end
 
       if divisor >= max_divisor_candidate # current_number is prime
-        factors << [current_number, 1]
-        current_number = 1
+        factors << [current_number, typeof(n).new(1)]
+        current_number = typeof(n).new(1)
       else
-        multiplicity = 0
+        multiplicity = typeof(n).new(0)
         while current_number % divisor == 0
           current_number /= divisor
           multiplicity += 1
@@ -47,5 +61,15 @@ class Primes
     end
 
     return factors
+  end
+end
+
+struct Int
+  def prime?
+    Primes.prime?(self)
+  end
+
+  def factorization
+    Primes.factorization(self)
   end
 end
