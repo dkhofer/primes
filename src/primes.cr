@@ -63,9 +63,10 @@ class Primes
   end
 end
 
-# NOTE(hofer): Necessary because currently it's not possible to have
-# an array of type Int, so need to explicitly convert every int to the
-# desired int type.
+# NOTE(hofer): Necessary because if we have an array of say Int64's
+# and want to add an Int32 to it, the compiler complains.  It would be
+# nice if it would instead convert the Int32 to an Int64, but I can
+# live without it for now.
 def convert_type(ints, n)
   ints.map { |i| typeof(n).new(i) }
 end
