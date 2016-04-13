@@ -28,40 +28,46 @@ class Primes
     factors = [] of Array(typeof(n))
 
     if n < 0
-      factors << [typeof(n).new(-1), typeof(n).new(1)]
+      factors << convert_type([-1, 1], n)
       n = n.abs
     end
 
     if n == 2
-      factors << [n, typeof(n).new(1)]
-      n = typeof(n).new(1)
+      return [convert_type([2, 1], n)]
     end
 
     current_number = n
-    divisor = typeof(n).new(2)
+    divisor = n.class.new(2)
 
     while current_number > 1
       max_divisor_candidate = binary_search_sqrt(current_number) + 1
       while divisor < max_divisor_candidate && current_number % divisor != 0
-        divisor += typeof(n).new(1)
+        divisor += 1
       end
 
       if divisor >= max_divisor_candidate # current_number is prime
-        factors << [current_number, typeof(n).new(1)]
+        factors << convert_type([current_number, 1], n)
         current_number = typeof(n).new(1)
       else
-        multiplicity = typeof(n).new(0)
+        multiplicity = 0
         while current_number % divisor == 0
           current_number /= divisor
           multiplicity += 1
         end
 
-        factors << [divisor, multiplicity]
+        factors << convert_type([divisor, multiplicity], n)
       end
     end
 
     return factors
   end
+end
+
+# NOTE(hofer): Necessary because currently it's not possible to have
+# an array of type Int, so need to explicitly convert every int to the
+# desired int type.
+def convert_type(ints, n)
+  ints.map { |i| typeof(n).new(i) }
 end
 
 struct Int
