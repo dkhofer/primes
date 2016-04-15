@@ -1,5 +1,15 @@
 class Primes
   def self.prime?(n : Int)
+    # NOTE(hofer): On my laptop, 10^8 is approximately where Miller-Rabin starts
+    # being faster.
+    if n < 100_000_000
+      naive_prime?(n)
+    else
+      miller_rabin_prime?(n)
+    end
+  end
+
+  def self.naive_prime?(n : Int)
     return false if n < 2
     return true if n == 2
 
@@ -8,7 +18,24 @@ class Primes
     return true
   end
 
+  def self.power(x : Int, n : Int, m : Int)
+    result = BigInt.new(1)
+    square = BigInt.new(x)
+
+    while n != 0
+      result = (result * square) % m if (n & 1) == 1
+      square = (square * square) % m
+      n >>= 1
+    end
+
+    return m.class.new(result)
+  end
+
   def self.miller_rabin_prime?(n : Int)
+    return naive_prime?(n) if n < 100
+
+    n = BigInt.new(n)
+
     samples = 0
     temp_n = n
 
@@ -27,13 +54,13 @@ class Primes
       s += 1
     end
 
-    (0..samples).each do
-      a = n.class.new(2 + rand(n - 4))
+    samples.times do
+      a = BigInt.new(2 + rand(n - 4))
       x = power(a, t, n)
 
       next if x == 1 || x == n - 1
 
-      (s - 1).times do
+      s.times do
         x = (x * x) % n
         return false if x == 1
         break if x == n - 1
