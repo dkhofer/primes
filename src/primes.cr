@@ -60,7 +60,7 @@ class Primes
 
       next if x == 1 || x == n - 1
 
-      (s - 1).times do
+      s.times do
         x = (x * x) % n
         return false if x == 1
         break if x == n - 1
