@@ -1,3 +1,5 @@
+require "big_int"
+
 class Primes
   def self.prime?(n : Int)
     # NOTE(hofer): On my laptop, 10^8 is approximately where Miller-Rabin starts

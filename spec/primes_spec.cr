@@ -1,4 +1,3 @@
-require "big_int"
 require "spec"
 require "../src/primes"
 
