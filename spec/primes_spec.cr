@@ -28,11 +28,34 @@ describe "Primes" do
       Primes.prime?(3).should be_true
       Primes.prime?(23).should be_true
       Primes.prime?(1_009).should be_true
+      Primes.prime?(1_000_003).should be_true
+      Primes.prime?(BigInt.new(193_707_721)).should be_true
     end
 
     it "plays well with BigInts" do
       Primes.prime?(BigInt.new(2)).should be_true
       Primes.prime?(BigInt.new(2) ** 64).should be_false
+    end
+
+    it "usually works with the Fermat test" do
+      # 561 is a Carmichael number.
+      Primes.fermat_prime?(561).should be_false
+      Primes.fermat_prime?(1_009).should be_true
+    end
+
+    it "works on the Miller-Rabin test" do
+      Primes.miller_rabin_prime?(71).should be_true
+      Primes.miller_rabin_prime?(561).should be_false
+      Primes.miller_rabin_prime?(1_007).should be_false
+      Primes.miller_rabin_prime?(1_009).should be_true
+      Primes.miller_rabin_prime?(BigInt.new(1_000_003)).should be_true
+      Primes.miller_rabin_prime?(BigInt.new(1_000_005)).should be_false
+      Primes.miller_rabin_prime?(BigInt.new(193_707_721)).should be_true
+      Primes.miller_rabin_prime?(BigInt.new(761_838_257_287)).should be_true
+    end
+
+    it "does power + mod correctly" do
+      Primes.power(BigInt.new(121_161), 500_001, 1_000_003).should eq 1
     end
   end
 
@@ -55,6 +78,20 @@ describe "Primes" do
 
       Primes.factorization(BigInt.new(-1)).should eq [[-1, 1]]
       Primes.factorization(BigInt.new(-4)).should eq [[-1, 1], [2, 2]]
+    end
+
+    it "does trial division correctly" do
+      Primes.trial_division(1_098_413).should eq [563, 1951]
+    end
+
+    it "does Pollard Rho correctly" do
+      Primes.pollard_rho(1_098_413).should eq 563
+#      puts Primes.pollard_rho(BigInt.new(2) ** 67 - 1)
+    end
+
+    it "does Pollard P-1 correctly" do
+#      puts Primes.pollard_p_minus_one(1_098_413)
+#      puts Primes.pollard_p_minus_one(BigInt.new(2) ** 67 - 1)
     end
   end
 
