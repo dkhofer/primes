@@ -28,11 +28,41 @@ describe "Primes" do
       Primes.prime?(3).should be_true
       Primes.prime?(23).should be_true
       Primes.prime?(1_009).should be_true
+      Primes.prime?(1_000_003).should be_true
+      Primes.prime?(1_000_005).should be_false
+      Primes.prime?(193_707_721).should be_true
     end
 
     it "plays well with BigInts" do
       Primes.prime?(BigInt.new(2)).should be_true
       Primes.prime?(BigInt.new(2) ** 64).should be_false
+    end
+
+    it "usually works with the Fermat test" do
+      # 561 is a Carmichael number.
+      Primes.fermat_prime?(561).should be_false
+      Primes.fermat_prime?(1_009).should be_true
+    end
+
+    it "works on the Miller-Rabin test" do
+      Primes.miller_rabin_prime?(71).should be_true
+      Primes.miller_rabin_prime?(561).should be_false
+      Primes.miller_rabin_prime?(1_007).should be_false
+      Primes.miller_rabin_prime?(1_009).should be_true
+      Primes.miller_rabin_prime?(1_000_003).should be_true
+      Primes.miller_rabin_prime?(1_000_005).should be_false
+      Primes.miller_rabin_prime?(193_707_721).should be_true
+      Primes.miller_rabin_prime?(BigInt.new("761838257287")).should be_true
+      Primes.miller_rabin_prime?(BigInt.new(2) ** 67 - 1).should be_false
+
+      naive_under_100k = (1..10 ** 5).to_a.select { |i| Primes.naive_prime?(i) }
+      mr_under_100k = (1..10 ** 5).to_a.select { |i| Primes.miller_rabin_prime?(i) }
+
+      mr_under_100k.should eq naive_under_100k
+    end
+
+    it "does power + mod correctly" do
+      Primes.power(BigInt.new(121_161), 500_001, 1_000_003).should eq 1
     end
   end
 
@@ -71,6 +101,9 @@ describe "Primes" do
 
       BigInt.new(1_007).prime?.should be_false
       BigInt.new(1_007).factorization.should eq [[19, 1], [53, 1]]
+
+      cole_prime = BigInt.new(2) ** 67 - 1
+      cole_prime.prime?.should be_false
     end
   end
 end
