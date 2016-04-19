@@ -6,9 +6,6 @@ def timing_result(&block)
   Benchmark.measure { yield }.real * 1000
 end
 
-# Cole's prime
-#puts Primes.factorization(BigInt.new(2) ** 67 - 1)
-
 big_number = BigInt.new(10) ** 8
 
 (1..100).each do |i|

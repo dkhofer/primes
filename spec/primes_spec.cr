@@ -85,6 +85,21 @@ describe "Primes" do
       Primes.factorization(BigInt.new(-1)).should eq [[-1, 1]]
       Primes.factorization(BigInt.new(-4)).should eq [[-1, 1], [2, 2]]
     end
+
+    it "does trial division correctly" do
+      Primes.trial_division(1_098_413).should eq [[563, 1], [1951, 1]]
+    end
+
+    it "does Pollard Rho correctly" do
+      Primes.pollard_rho(1_098_413).should eq 563
+      Primes.pollard_rho(BigInt.new(2) ** 67 - 1).should eq 193_707_721
+    end
+
+    # TODO(hofer): Finish implementing the P-1 test.
+#    it "does Pollard P-1 correctly" do
+#      puts Primes.pollard_p_minus_one(1_098_413)
+#      puts Primes.pollard_p_minus_one(BigInt.new(2) ** 67 - 1)
+#    end
   end
 
   context "struct Int" do
