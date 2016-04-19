@@ -111,10 +111,16 @@ class Primes
     sqrt
   end
 
-  def self.trial_division(n : Int)
-    factors = PRIMES.select { |p| n % p == 0 }
-    temp_n = n
-    factors.map { |factor| [factor, find_multiplicity(n, factor)] }
+  def self.trial_division(n : Int, lower_bound = 2)
+    upper_bound = binary_search_sqrt(n)
+
+    PRIMES.each do |p|
+      break if p > upper_bound
+      next if p < lower_bound
+      return p if n % p == 0
+    end
+
+    return n.class.new(0)
   end
 
   def self.pollard_rho(n : Int)
@@ -244,10 +250,16 @@ class Primes
     current_number = n
 
     # Trial division
-    small_divisors = trial_division(current_number).map { |pair| convert_type(pair, n) }
-    factors.concat(small_divisors)
-    current_number = divide_out_factors(current_number, small_divisors)
-    divisor = n.class.new(PRIMES.last + 1)
+    trial_divisor = n.class.new(1)
+
+    while trial_divisor > 0 && !current_number.prime?
+      trial_divisor = trial_division(current_number, trial_divisor)
+      if trial_divisor > 0
+        new_divisor_pair = convert_type([trial_divisor, find_multiplicity(current_number, trial_divisor)], n)
+        factors << new_divisor_pair
+        current_number = divide_out_factors(current_number, [new_divisor_pair])
+      end
+    end
 
     if current_number.prime?
       factors << convert_type([current_number, 1], n)
