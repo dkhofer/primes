@@ -95,11 +95,9 @@ describe "Primes" do
       Primes.pollard_rho(BigInt.new(2) ** 67 - 1).should eq 193_707_721
     end
 
-    # TODO(hofer): Finish implementing the P-1 test.
-#    it "does Pollard P-1 correctly" do
-#      puts Primes.pollard_p_minus_one(1_098_413)
-#      puts Primes.pollard_p_minus_one(BigInt.new(2) ** 67 - 1)
-#    end
+    it "does Pollard P-1 correctly" do
+      Primes.pollard_p_minus_one(1_098_413).should eq 563
+    end
   end
 
   context "struct Int" do
