@@ -106,33 +106,40 @@ class Primes
   end
 
   def self.trial_division(n : Int)
-    PRIMES.select { |p| n % p == 0 }
+    factors = PRIMES.select { |p| n % p == 0 }
+    temp_n = n
+    factors.map { |factor| [factor, find_multiplicity(n, factor)] }
   end
 
   def self.pollard_rho(n : Int)
-    x = n.class.new(0)
-    y = n.class.new(0)
+    x = BigInt.new(0)
+    y = BigInt.new(0)
     product = n.class.new(1)
     polynomial = ->(x : typeof(n)) { (x * x + 1) % n }
-    factor = nil
+    polynomial = ->(x : BigInt) { ((x * x) + 1) % n }
+    factor = n.class.new(0)
     iterations = 0
 
-    while factor.nil? && iterations < 10 ** 8
-      x = polynomial.call(x)
-      y = polynomial.call(polynomial.call(y))
-      product = (product * (x - y).abs) % n
+    # NOTE(hofer): Get a positive number divisible by 100
+    attempts = (((n ** 0.25).to_i / 100) + 1) * 100
 
-      # FIXME(hofer): If product == 0, need to back up x and y and
-      # apply normal rho algorithm.
-#      puts product if product == 0
+    (1..attempts).each do |i|
+      new_x = polynomial.call(x)
+      new_y = polynomial.call(polynomial.call(y))
+      new_product = (product * (new_y - new_x).abs) % n
 
-      if iterations % 100 == 0
-        test_gcd = n.gcd(product)
-        factor = test_gcd if test_gcd > 1
+      if new_product == 0 || i % 100 == 0 || i == attempts
+        test_gcd = n.gcd(new_product)
+        if test_gcd > 1 && test_gcd < n
+          factor = n.class.new(test_gcd)
+          break
+        end
         product = n.class.new(1)
+      else
+        x = new_x
+        y = new_y
+        product = new_product
       end
-
-      iterations += 1
     end
 
     factor
@@ -162,24 +169,34 @@ class Primes
 
     nil
   end
-  
-  def self.factorization(n : Int)
-    raise "Can't factor zero!" if n == 0
 
+  def self.find_multiplicity(n, p)
+    multiplicity = 0
+    product = n.class.new(p)
+    while n % product == 0
+      product *= p
+      multiplicity += 1
+    end
+
+    multiplicity
+  end
+
+  def self.divide_out_factors(n, factors)
+    result = n
+    factors.each do |pair|
+      p = pair.first
+      multiplicity = pair.last
+      multiplicity.times { result /= p }
+    end
+
+    result
+  end
+
+  def self.brute_force(n)
+    current_number = n
     factors = [] of Array(typeof(n))
 
-    if n < 0
-      factors << convert_type([-1, 1], n)
-      n = n.abs
-    end
-
-    if n.prime?
-      factors << convert_type([n, 1], n)
-      n = n.class.new(1)
-    end
-
-    current_number = n
-    divisor = n.class.new(2)
+    divisor = PRIMES.last + 1
 
     while current_number > 1
       max_divisor_candidate = binary_search_sqrt(current_number) + 1
@@ -191,14 +208,57 @@ class Primes
         factors << convert_type([current_number, 1], n)
         current_number = typeof(n).new(1)
       else
-        multiplicity = 0
-        while current_number % divisor == 0
-          current_number /= divisor
-          multiplicity += 1
-        end
-
-        factors << convert_type([divisor, multiplicity], n)
+        new_factors = convert_type([divisor, find_multiplicity(current_number, divisor)], n)
+        factors << new_factors
+        current_number = divide_out_factors(current_number, [new_factors])
       end
+    end
+
+    factors
+  end
+
+  def self.factorization(n : Int, options = ["trial_division"])
+    raise "Can't factor zero!" if n == 0
+
+    factors = [] of Array(typeof(n))
+
+    if n < 0
+      factors << convert_type([-1, 1], n)
+      n = n.abs
+    end
+
+    if n.prime?
+      factors << convert_type([n, 1], n)
+      return factors
+    end
+
+    current_number = n
+
+    # Trial division
+    small_divisors = trial_division(current_number).map { |pair| convert_type(pair, n) }
+    factors.concat(small_divisors)
+    current_number = divide_out_factors(current_number, small_divisors)
+    divisor = n.class.new(PRIMES.last + 1)
+
+    if current_number.prime?
+      factors << convert_type([current_number, 1], n)
+      return factors
+    end
+
+    if options.includes?("pollard_rho")
+      pollard_divisor = pollard_rho(current_number)
+      while pollard_divisor > 0 && !current_number.prime?
+        new_divisor_pair = convert_type([pollard_divisor, find_multiplicity(current_number, pollard_divisor)], n)
+        factors << new_divisor_pair
+        current_number = divide_out_factors(current_number, [new_divisor_pair])
+        pollard_divisor = pollard_rho(current_number)
+      end
+    end
+
+    if current_number.prime?
+      factors << convert_type([current_number, 1], n)
+    else
+      factors.concat(brute_force(current_number).map { |pair| convert_type(pair, n) })
     end
 
     return factors

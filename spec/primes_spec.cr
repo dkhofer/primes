@@ -88,7 +88,7 @@ describe "Primes" do
     end
 
     it "does trial division correctly" do
-      Primes.trial_division(1_098_413).should eq [563, 1951]
+      Primes.trial_division(1_098_413).should eq [[563, 1], [1951, 1]]
     end
 
     it "does Pollard Rho correctly" do
