@@ -91,7 +91,11 @@ class Primes
     power(a, n - 1, n) != n.class.new(1)
   end
 
-  PRIMES = (2..10 ** 6).select { |n| n.prime? }
+  def self.compute_primes(max)
+    (2..max).select { |n| n.prime? }
+  end
+
+  PRIMES = compute_primes(10 ** 6)
 
   # NOTE(hofer): Need this because Math.sqrt doesn't handle BigInts.
   def self.binary_search_sqrt(n)
@@ -123,7 +127,7 @@ class Primes
     iterations = 0
 
     # NOTE(hofer): Get a positive number divisible by 100
-    attempts = (((n ** 0.25).to_i / 100) + 1) * 100
+    attempts = [10 ** 8, ((binary_search_sqrt(binary_search_sqrt(n)) / 100) + 1) * 100].min
 
     (1..attempts).each do |i|
       new_x = polynomial.call(x)
@@ -147,6 +151,21 @@ class Primes
     factor
   end
 
+  # NOTE(hofer): It appears that for this to be effective, a lot of
+  # primes must be used, and I'm not going to precompute more than 1M
+  # of them.
+  def self.pollard_p_minus_one(n : Int)
+    x = n.class.new(2)
+
+    PRIMES.each do |p|
+      x = power(x, p, n)
+      factor = n.gcd(x - 1)
+      return factor if factor > 1 && factor < n
+    end
+
+    n.class.new(0)
+  end
+
   def self.power(x : Int, n : Int, m : Int)
     result = x.class.new(1)
     square = x
@@ -158,18 +177,6 @@ class Primes
     end
 
     return result
-  end
-
-  def self.pollard_p_minus_one(n : Int)
-    x = n.class.new(2)
-
-    PRIMES.each do |p|
-      x = power(x, p, n)
-      factor = n.gcd(x)
-      return factor if factor > 1 && factor < n
-    end
-
-    nil
   end
 
   def self.find_multiplicity(n, p)
@@ -219,7 +226,7 @@ class Primes
     factors
   end
 
-  def self.factorization(n : Int, options = ["trial_division"])
+  def self.factorization(n : Int, options = ["trial_division", "pollard_rho"])
     raise "Can't factor zero!" if n == 0
 
     factors = [] of Array(typeof(n))
@@ -247,19 +254,33 @@ class Primes
       return factors
     end
 
-    if options.includes?("pollard_rho")
-      pollard_divisor = pollard_rho(current_number)
+    if options.includes?("pollard_rho") && current_number > 1
+      pollard_divisor = n.class.new(1)
       while pollard_divisor > 0 && !current_number.prime?
-        new_divisor_pair = convert_type([pollard_divisor, find_multiplicity(current_number, pollard_divisor)], n)
-        factors << new_divisor_pair
-        current_number = divide_out_factors(current_number, [new_divisor_pair])
         pollard_divisor = pollard_rho(current_number)
+        if pollard_divisor > 0
+          new_divisor_pair = convert_type([pollard_divisor, find_multiplicity(current_number, pollard_divisor)], n)
+          factors << new_divisor_pair
+          current_number = divide_out_factors(current_number, [new_divisor_pair])
+        end
+      end
+    end
+
+    if options.includes?("pollard_p_minus_one") && current_number > 1
+      pollard_divisor = n.class.new(1)
+      while pollard_divisor > 0 && !current_number.prime?
+        pollard_divisor = pollard_p_minus_one(current_number)
+        if pollard_divisor > 0
+          new_divisor_pair = convert_type([pollard_divisor, find_multiplicity(current_number, pollard_divisor)], n)
+          factors << new_divisor_pair
+          current_number = divide_out_factors(current_number, [new_divisor_pair])
+        end
       end
     end
 
     if current_number.prime?
       factors << convert_type([current_number, 1], n)
-    else
+    elsif current_number > 1
       factors.concat(brute_force(current_number).map { |pair| convert_type(pair, n) })
     end
 

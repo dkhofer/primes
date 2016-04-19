@@ -11,7 +11,9 @@ end
 #puts timing_result { puts Primes.factorization(BigInt.new(2) ** 67 - 1, ["trial_division", "pollard_rho"]) }
 
 #puts Primes.factorization(BigInt.new(2) ** 67 - 1, ["pollard_rho"])
-puts Primes.factorization(BigInt.new(2) ** 256 + 1, ["pollard_rho"])
-
-#puts Primes.pollard_rho(BigInt.new(2) ** 67 - 1)
-#puts Primes.pollard_rho(BigInt.new(2) ** 256 + 1)
+puts BigInt.new(2) ** 256 + 1
+puts Primes.factorization(BigInt.new(2) ** 256 + 1)
+#puts Primes.factorization(BigInt.new(2) ** 512 + 1, ["pollard_rho"])
+#puts Primes.factorization(BigInt.new(2) ** 1024 + 1, ["pollard_rho"])
+#puts Primes.factorization(BigInt.new(2) ** 2048 + 1, ["pollard_rho"])
+#puts Primes.factorization(BigInt.new(45) ** 123 + 1)
