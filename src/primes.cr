@@ -1,6 +1,13 @@
 require "big_int"
+require "./utils"
 
 class Primes
+  include Utils
+
+  #####################
+  # Primality testing #
+  #####################
+
   def self.prime?(n : Int)
     # NOTE(hofer): On my laptop, 10^8 is approximately where Miller-Rabin starts
     # being faster.
@@ -15,22 +22,10 @@ class Primes
     return false if n < 2
     return true if n == 2
 
-    (2..Math.sqrt(n)).each { |i| return false if n % i == 0 }
+    (2..Math.sqrt(n) + 1).each { |i| return false if n % i == 0 }
+#    (2..Utils.binary_search_sqrt(n) + 1).each { |i| return false if n % i == 0 }
 
     return true
-  end
-
-  def self.power(x : Int, n : Int, m : Int)
-    result = BigInt.new(1)
-    square = BigInt.new(x)
-
-    while n != 0
-      result = (result * square) % m if (n & 1) == 1
-      square = (square * square) % m
-      n >>= 1
-    end
-
-    return m.class.new(result)
   end
 
   def self.miller_rabin_prime?(n : Int)
@@ -58,7 +53,7 @@ class Primes
 
     samples.times do
       a = BigInt.new(2 + rand(n - 4))
-      x = power(a, t, n)
+      x = Utils.power(a, t, n)
 
       next if x == 1 || x == n - 1
 
@@ -88,7 +83,7 @@ class Primes
   end
 
   def self.fermat_composite?(a : Int, n : Int)
-    power(a, n - 1, n) != n.class.new(1)
+    Utils.power(a, n - 1, n) != n.class.new(1)
   end
 
   def self.compute_primes(max)
@@ -97,58 +92,8 @@ class Primes
 
   PRIMES = compute_primes(10 ** 6)
 
-  # Finds greatest number less than or equal to the square root of n
-  # NOTE(hofer): Need this because Math.sqrt doesn't handle BigInts.
-  def self.binary_search_sqrt(n)
-    sqrt = typeof(n).new(0)
-    log = n.to_s.split("").size * 3
-    (0..log + 1).reverse_each do |i|
-      layer = typeof(n).new(1) << i
-      if (sqrt + layer) * (sqrt + layer) <= n
-        sqrt += layer
-      end
-    end
-
-    sqrt
-  end
-
-  # Returns an integer x such that x ** k == n, or nil if there is no
-  # such x.
-  def self.kth_root(n, k)
-    root = BigInt.new(0)
-    log = ((n.to_s.split("").size * 4) / Math.log(k, 2)).to_i
-    (0..log + 1).reverse_each do |i|
-      layer = BigInt.new(1) << i
-      if (root + layer) ** k <= n
-        root += layer
-      end
-    end
-
-    if root ** k == n
-      n.class.new(root)
-    else
-      nil
-    end
-  end
-
-  # Returns a pair [x, k] such that x ** k == n, or nil if there is no
-  # such pair.
-  def self.perfect_power(n)
-    return nil if n < 4
-
-    bits = n.to_s.split("").size * 4
-    (2..bits).reverse_each do |i|
-      result = kth_root(n, i)
-      unless result.nil?
-        return [result, i]
-      end
-    end
-
-    nil
-  end
-
   def self.trial_division(n : Int, lower_bound = 2)
-    upper_bound = binary_search_sqrt(n)
+    upper_bound = Utils.binary_search_sqrt(n)
 
     PRIMES.each do |p|
       break if p > upper_bound
@@ -158,6 +103,10 @@ class Primes
 
     return n.class.new(0)
   end
+
+  #################
+  # Factorization #
+  #################
 
   def self.pollard_rho(n : Int)
     x = BigInt.new(0)
@@ -169,7 +118,7 @@ class Primes
     iterations = 0
 
     # NOTE(hofer): Get a positive number divisible by 100
-    attempts = [10 ** 8, ((binary_search_sqrt(binary_search_sqrt(n)) / 100) + 1) * 100].min
+    attempts = [10 ** 8, ((Utils.binary_search_sqrt(Utils.binary_search_sqrt(n)) / 100) + 1) * 100].min
 
     (1..attempts).each do |i|
       new_x = polynomial.call(x)
@@ -200,47 +149,12 @@ class Primes
     x = n.class.new(2)
 
     PRIMES.each do |p|
-      x = power(x, p, n)
+      x = Utils.power(x, p, n)
       factor = n.gcd(x - 1)
       return factor if factor > 1 && factor < n
     end
 
     n.class.new(0)
-  end
-
-  def self.power(x : Int, n : Int, m : Int)
-    result = x.class.new(1)
-    square = x
-
-    while n != 0
-      result = (result * square) % m if (n & 1) == 1
-      square = (square * square) % m
-      n >>= 1
-    end
-
-    return result
-  end
-
-  def self.find_multiplicity(n, p)
-    multiplicity = 0
-    product = n.class.new(p)
-    while n % product == 0
-      product *= p
-      multiplicity += 1
-    end
-
-    multiplicity
-  end
-
-  def self.divide_out_factors(n, factors)
-    result = n
-    factors.each do |pair|
-      p = pair.first
-      multiplicity = pair.last
-      multiplicity.times { result /= p }
-    end
-
-    result
   end
 
   def self.brute_force(n)
@@ -250,18 +164,18 @@ class Primes
     divisor = PRIMES.last + 1
 
     while current_number > 1
-      max_divisor_candidate = binary_search_sqrt(current_number) + 1
+      max_divisor_candidate = Utils.binary_search_sqrt(current_number) + 1
       while divisor < max_divisor_candidate && current_number % divisor != 0
         divisor += 1
       end
 
       if divisor >= max_divisor_candidate # current_number is prime
-        factors << convert_type([current_number, 1], n)
+        factors << Utils.convert_type([current_number, 1], n)
         current_number = typeof(n).new(1)
       else
-        new_factors = convert_type([divisor, find_multiplicity(current_number, divisor)], n)
+        new_factors = Utils.convert_type([divisor, Utils.find_multiplicity(current_number, divisor)], n)
         factors << new_factors
-        current_number = divide_out_factors(current_number, [new_factors])
+        current_number = Utils.divide_out_factors(current_number, [new_factors])
       end
     end
 
@@ -274,11 +188,11 @@ class Primes
     factors = [] of Array(typeof(n))
 
     if n < 0
-      factors << convert_type([-1, 1], n)
+      factors << Utils.convert_type([-1, 1], n)
       n = n.abs
     end
 
-    powers = perfect_power(n)
+    powers = Utils.perfect_power(n)
     unless powers.nil?
       base_factors = factorization(typeof(n).new(powers.first), options)
       factors.concat(base_factors.map { |pair| [pair.first, pair.last * typeof(n).new(powers.last)] })
@@ -286,7 +200,7 @@ class Primes
     end
 
     if n.prime?
-      factors << convert_type([n, 1], n)
+      factors << Utils.convert_type([n, 1], n)
       return factors
     end
 
@@ -298,14 +212,14 @@ class Primes
     while trial_divisor > 0 && !current_number.prime?
       trial_divisor = trial_division(current_number, trial_divisor)
       if trial_divisor > 0
-        new_divisor_pair = convert_type([trial_divisor, find_multiplicity(current_number, trial_divisor)], n)
+        new_divisor_pair = Utils.convert_type([trial_divisor, Utils.find_multiplicity(current_number, trial_divisor)], n)
         factors << new_divisor_pair
-        current_number = divide_out_factors(current_number, [new_divisor_pair])
+        current_number = Utils.divide_out_factors(current_number, [new_divisor_pair])
       end
     end
 
     if current_number.prime?
-      factors << convert_type([current_number, 1], n)
+      factors << Utils.convert_type([current_number, 1], n)
       return factors
     end
 
@@ -314,9 +228,9 @@ class Primes
       while pollard_divisor > 0 && !current_number.prime?
         pollard_divisor = pollard_rho(current_number)
         if pollard_divisor > 0
-          new_divisor_pair = convert_type([pollard_divisor, find_multiplicity(current_number, pollard_divisor)], n)
+          new_divisor_pair = Utils.convert_type([pollard_divisor, Utils.find_multiplicity(current_number, pollard_divisor)], n)
           factors << new_divisor_pair
-          current_number = divide_out_factors(current_number, [new_divisor_pair])
+          current_number = Utils.divide_out_factors(current_number, [new_divisor_pair])
         end
       end
     end
@@ -326,29 +240,21 @@ class Primes
       while pollard_divisor > 0 && !current_number.prime?
         pollard_divisor = pollard_p_minus_one(current_number)
         if pollard_divisor > 0
-          new_divisor_pair = convert_type([pollard_divisor, find_multiplicity(current_number, pollard_divisor)], n)
+          new_divisor_pair = Utils.convert_type([pollard_divisor, Utils.find_multiplicity(current_number, pollard_divisor)], n)
           factors << new_divisor_pair
-          current_number = divide_out_factors(current_number, [new_divisor_pair])
+          current_number = Utils.divide_out_factors(current_number, [new_divisor_pair])
         end
       end
     end
 
     if current_number.prime?
-      factors << convert_type([current_number, 1], n)
+      factors << Utils.convert_type([current_number, 1], n)
     elsif current_number > 1
-      factors.concat(brute_force(current_number).map { |pair| convert_type(pair, n) })
+      factors.concat(brute_force(current_number).map { |pair| Utils.convert_type(pair, n) })
     end
 
     return factors
   end
-end
-
-# NOTE(hofer): Necessary because if we have an array of say Int64's
-# and want to add an Int32 to it, the compiler complains.  It would be
-# nice if it would instead convert the Int32 to an Int64, but I can
-# live without it for now.
-def convert_type(ints, n)
-  ints.map { |i| typeof(n).new(i) }
 end
 
 struct Int
