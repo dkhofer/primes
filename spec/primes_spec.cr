@@ -59,10 +59,6 @@ describe "Primes" do
 
       mr_under_100k.should eq naive_under_100k
     end
-
-    it "does power + mod correctly" do
-      Primes.power(BigInt.new(121_161), 500_001, 1_000_003).should eq 1
-    end
   end
 
   context "factorization" do
