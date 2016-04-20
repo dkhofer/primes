@@ -97,6 +97,7 @@ class Primes
 
   PRIMES = compute_primes(10 ** 6)
 
+  # Finds greatest number less than or equal to the square root of n
   # NOTE(hofer): Need this because Math.sqrt doesn't handle BigInts.
   def self.binary_search_sqrt(n)
     sqrt = typeof(n).new(0)
@@ -109,6 +110,41 @@ class Primes
     end
 
     sqrt
+  end
+
+  # Returns an integer x such that x ** k == n, or nil if there is no
+  # such x.
+  def self.kth_root(n, k)
+    root = BigInt.new(0)
+    log = ((n.to_s.split("").size * 4) / Math.log(k, 2)).to_i
+    (0..log + 1).reverse_each do |i|
+      layer = BigInt.new(1) << i
+      if (root + layer) ** k <= n
+        root += layer
+      end
+    end
+
+    if root ** k == n
+      n.class.new(root)
+    else
+      nil
+    end
+  end
+
+  # Returns a pair [x, k] such that x ** k == n, or nil if there is no
+  # such pair.
+  def self.perfect_power(n)
+    return nil if n < 4
+
+    bits = n.to_s.split("").size * 4
+    (2..bits).reverse_each do |i|
+      result = kth_root(n, i)
+      unless result.nil?
+        return [result, i]
+      end
+    end
+
+    nil
   end
 
   def self.trial_division(n : Int, lower_bound = 2)
@@ -240,6 +276,13 @@ class Primes
     if n < 0
       factors << convert_type([-1, 1], n)
       n = n.abs
+    end
+
+    powers = perfect_power(n)
+    unless powers.nil?
+      base_factors = factorization(typeof(n).new(powers.first), options)
+      factors.concat(base_factors.map { |pair| [pair.first, pair.last * typeof(n).new(powers.last)] })
+      return factors
     end
 
     if n.prime?
