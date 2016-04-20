@@ -64,19 +64,6 @@ module Utils
     return m.class.new(result)
   end
 
-  # def self.power(x : Int, n : Int, m : Int)
-  #   result = x.class.new(1)
-  #   square = x
-
-  #   while n != 0
-  #     result = (result * square) % m if (n & 1) == 1
-  #     square = (square * square) % m
-  #     n >>= 1
-  #   end
-
-  #   return result
-  # end
-
   def self.find_multiplicity(n, p)
     multiplicity = 0
     product = n.class.new(p)
@@ -105,5 +92,25 @@ module Utils
   # can live without it for now.
   def self.convert_type(ints, n)
     ints.map { |i| typeof(n).new(i) }
+  end
+
+  def self.rand(n : BigInt)
+    temp_n = n
+    result = BigInt.new(0)
+
+    while temp_n != 0
+      bit = rand(2)
+      if (result | bit) < n
+        result |= bit
+      end
+
+      if (result << 1) < n
+        result <<= 1
+      end
+
+      temp_n >>= 1
+    end
+
+    result
   end
 end

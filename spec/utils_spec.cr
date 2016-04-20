@@ -29,4 +29,11 @@ describe "Utils" do
   it "does power + mod correctly" do
     Utils.power(BigInt.new(121_161), 500_001, 1_000_003).should eq 1
   end
+
+  it "computes rand correctly" do
+    x = BigInt.new("123456789012345678")
+    random = Utils.rand(x)
+    (random >= 0).should be_true
+    (random < x).should be_true
+  end
 end

@@ -22,8 +22,13 @@ class Primes
     return false if n < 2
     return true if n == 2
 
-    (2..Math.sqrt(n) + 1).each { |i| return false if n % i == 0 }
-#    (2..Utils.binary_search_sqrt(n) + 1).each { |i| return false if n % i == 0 }
+    if typeof(n) == BigInt
+      # NOTE(hofer): My hand-rolled square root method is much slower
+      # than the built-in one.
+      (2..(Utils.binary_search_sqrt(n) + 1)).each { |i| return false if n % i == 0 }
+    else
+      (2..Math.sqrt(n) + 1).each { |i| return false if n % i == 0 }
+    end
 
     return true
   end
@@ -52,7 +57,11 @@ class Primes
     end
 
     samples.times do
-      a = BigInt.new(2 + rand(n - 4))
+      if typeof(n) == BigInt
+        a = Utils.rand(n - 4) + 2
+      else
+        a = BigInt.new(2 + rand(n - 4))
+      end
       x = Utils.power(a, t, n)
 
       next if x == 1 || x == n - 1
