@@ -114,6 +114,7 @@ describe "Primes" do
       Primes.perfect_power(2).should eq nil
       Primes.perfect_power(14).should eq nil
       Primes.perfect_power(44).should eq nil
+      Primes.perfect_power(BigInt.new("9191676072895965691111420287778973431718115")).should eq nil
     end
 
     it "computes the square root" do
