@@ -4,9 +4,9 @@ require "./utils"
 class Primes
   include Utils
 
-  #####################
-  # Primality testing #
-  #####################
+  # -----------------
+  # Primality testing
+  # -----------------
 
   def self.prime?(n : Int)
     # NOTE(hofer): On my laptop, 10^8 is approximately where Miller-Rabin starts
@@ -119,9 +119,9 @@ class Primes
     return n.class.new(0)
   end
 
-  #################
-  # Factorization #
-  #################
+  # -------------
+  # Factorization
+  # -------------
 
   def self.pollard_rho(n : Int)
     x = BigInt.new(0)
