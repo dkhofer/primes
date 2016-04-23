@@ -18,6 +18,18 @@ class Primes
     end
   end
 
+  def self.compute_primes(max)
+    (2..max).select { |n| n.prime? }
+  end
+
+  def self.small_primes
+    @@small_primes ||= compute_primes(10 ** 6)
+  end
+
+  def self.set_small_primes(primes)
+    @@small_primes = primes
+  end
+
   def self.naive_prime?(n : Int)
     return false if n < 2
     return true if n == 2
@@ -95,16 +107,10 @@ class Primes
     Utils.power(a, n - 1, n) != n.class.new(1)
   end
 
-  def self.compute_primes(max)
-    (2..max).select { |n| n.prime? }
-  end
-
-  PRIMES = compute_primes(10 ** 6)
-
   def self.trial_division(n : Int, lower_bound = 2)
     upper_bound = Utils.binary_search_sqrt(n)
 
-    PRIMES.each do |p|
+    small_primes.each do |p|
       break if p > upper_bound
       next if p < lower_bound
       return p if n % p == 0
@@ -157,7 +163,7 @@ class Primes
   def self.pollard_p_minus_one(n : Int)
     x = n.class.new(2)
 
-    PRIMES.each do |p|
+    small_primes.each do |p|
       x = Utils.power(x, p, n)
       factor = n.gcd(x - 1)
       return factor if factor > 1 && factor < n
@@ -170,7 +176,7 @@ class Primes
     current_number = n
     factors = [] of Array(typeof(n))
 
-    divisor = PRIMES.last + 1
+    divisor = small_primes.last + 1
 
     while current_number > 1
       max_divisor_candidate = Utils.binary_search_sqrt(current_number) + 1
