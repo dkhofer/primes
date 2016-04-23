@@ -1,3 +1,3 @@
 require "../src/primes"
 
-puts Primes.compute_primes(1_000)
+puts Primes.compute_primes(100_000)
