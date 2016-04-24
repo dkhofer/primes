@@ -197,7 +197,29 @@ class Primes
     factors
   end
 
+  def self.verify_factorization(n, factors)
+    factors_product = factors.reduce(n.class.new(1)) { |product, pair| pair.last.times { product *= pair.first }; product }
+    if factors_product != n
+      raise "Error: You've found a bug.  The factors we found (#{factors}) don't actually produce #{n} when multiplied together.  Please report this issue!"
+    end
+
+    factors.each do |pair|
+      unless pair.first.prime? || pair.first == n.class.new(-1)
+        raise "Error: You've found a bug.  At least one of the factors we found (#{factors}) was not prime (#{pair.first}).  Please report this issue!"
+      end
+    end
+  end
+
   def self.factorization(n : Int, options = ["trial_division", "pollard_rho"])
+    factors = internal_factorization(n, options)
+    verify_factorization(n, factors)
+    factors
+  end
+
+  # TODO(hofer): This method is getting pretty big (with some
+  # near-duplicate code), needs some refactoring, including merging it
+  # with the above factorization wrapper/assertion method.
+  private def self.internal_factorization(n : Int, options = ["trial_division", "pollard_rho"])
     raise "Can't factor zero!" if n == 0
 
     factors = [] of Array(typeof(n))
