@@ -95,6 +95,11 @@ describe "Primes" do
     it "does Pollard P-1 correctly" do
       Primes.pollard_p_minus_one(1_098_413).should eq 563
     end
+
+    it "verifies factorizations" do
+      expect_raises { Primes.verify_factorization(1024, [[2, 4]]) }
+      expect_raises { Primes.verify_factorization(1024, [[32, 2]]) }
+    end
   end
 
   context "struct Int" do
