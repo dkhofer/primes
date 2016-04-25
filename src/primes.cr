@@ -216,6 +216,18 @@ class Primes
     factors
   end
 
+  def self.find_factor(current_number, factor_finder)
+    divisor = n.class.new(1)
+    while divisor > 0 && !current_number.prime?
+      divisor = factor_finder.call(current_number)
+      if divisor > 0
+        new_divisor_pair = Utils.convert_type([divisor, Utils.find_multiplicity(current_number, divisor)], n)
+        factors << new_divisor_pair
+        current_number = Utils.divide_out_factors(current_number, [new_divisor_pair])
+      end
+    end
+  end
+
   # TODO(hofer): This method is getting pretty big (with some
   # near-duplicate code), needs some refactoring, including merging it
   # with the above factorization wrapper/assertion method.
