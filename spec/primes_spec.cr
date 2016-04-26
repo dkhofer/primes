@@ -61,47 +61,6 @@ describe "Primes" do
     end
   end
 
-  context "factorization" do
-    it "works on negative numbers" do
-      Primes.factorization(-1).should eq [[-1, 1]]
-      Primes.factorization(-4).should eq [[-1, 1], [2, 2]]
-    end
-
-    it "works on positive composite numbers" do
-      Primes.factorization(4).should eq [[2, 2]]
-      Primes.factorization(1_007).should eq [[19, 1], [53, 1]]
-      24.factorization.should eq [[2, 3], [3, 1]]
-      7200.factorization.should eq [[2, 5], [3, 2], [5, 2]]
-    end
-
-    it "plays well with BigInts" do
-      Primes.factorization(BigInt.new(4)).should eq [[2, 2]]
-      Primes.factorization(BigInt.new(1_007)).should eq [[19, 1], [53, 1]]
-
-      Primes.factorization(BigInt.new(-1)).should eq [[-1, 1]]
-      Primes.factorization(BigInt.new(-4)).should eq [[-1, 1], [2, 2]]
-    end
-
-    it "does trial division correctly" do
-      Primes.trial_division(1_098_413).should eq 563
-      Primes.trial_division(1_098_413, 564).should eq 1951
-    end
-
-    it "does Pollard Rho correctly" do
-      Primes.pollard_rho(1_098_413).should eq 563
-      Primes.pollard_rho(BigInt.new(2) ** 67 - 1).should eq 193_707_721
-    end
-
-    it "does Pollard P-1 correctly" do
-      Primes.pollard_p_minus_one(1_098_413).should eq 563
-    end
-
-    it "verifies factorizations" do
-      expect_raises { Primes.verify_factorization(1024, [[2, 4]]) }
-      expect_raises { Primes.verify_factorization(1024, [[32, 2]]) }
-    end
-  end
-
   context "struct Int" do
     it "includes prime? and factorization" do
       6.prime?.should be_false
