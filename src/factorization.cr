@@ -3,21 +3,21 @@ class Factorization
   getter :factors
   getter :unfactored
 
-  def initialize(n : BigInt)
-    @n = n
+  def initialize(n)
+    @n = BigInt.new(n)
 
-    factors = [] of Array(typeof(n))
-    if n < 0
-      factors << Utils.convert_type([-1, 1], n)
+    factors = [] of Array(typeof(@n))
+    if @n < 0
+      factors << Utils.convert_type([-1, 1], @n)
     end
 
-    if n.prime?
-      factors << Utils.convert_type([n, 1], n)
+    if @n.prime?
+      factors << Utils.convert_type([@n, 1], @n)
     end
 
     @factors = factors
 
-    @unfactored = n / self.class.product_of_factors(factors, n.class)
+    @unfactored = @n / self.class.product_of_factors(factors, @n.class)
   end
 
   def initialize(n : BigInt, factors : Array(Array(BigInt)))
@@ -26,7 +26,7 @@ class Factorization
     @factors = factors
     product = self.class.product_of_factors(factors, n.class)
     unless BigInt.new(n) % product == 0
-      raise "Error: product of factors #{factors} does not evenly divide #{n}."
+      raise "Error: You've found a bug.  The factors we've found so far (#{factors}) don't actually produce #{n} when multiplied together.  Please report this issue!"
     end
 
     quotient = BigInt.new(n) / product
@@ -41,7 +41,7 @@ class Factorization
   def self.verify_primality(factors)
     composites = factors.select { |pair| !(pair.first.prime? || pair.first == -1) }
     unless composites.empty?
-      raise "Error: Some factors provided are not prime: #{composites}"
+      raise "Error: You've found a bug.  At least one of the factors we found (#{factors}) was not prime (#{composites}).  Please report this issue!"
     end
   end
 

@@ -108,23 +108,28 @@ class Primes
     Utils.power(a, n - 1, n) != n.class.new(1)
   end
 
-  def self.trial_division(n : Int, lower_bound = 2)
-    upper_bound = Utils.binary_search_sqrt(n)
-
-    small_primes.each do |p|
-      break if p > upper_bound
-      next if p < lower_bound
-      return p if n % p == 0
-    end
-
-    return n.class.new(0)
-  end
-
   # -------------
   # Factorization
   # -------------
 
-  def self.pollard_rho(n : Int)
+  def self.trial_division(current_factors)
+    upper_bound = Utils.binary_search_sqrt(current_factors.unfactored)
+
+    small_primes.each do |p|
+      break if p > upper_bound || current_factors.complete?
+
+      if current_factors.unfactored % p == 0
+        current_factors = current_factors.with_new_factor(p)
+        upper_bound = Utils.binary_search_sqrt(current_factors.unfactored)
+      end
+    end
+
+    current_factors
+  end
+
+  def self.pollard_rho(current_factors)
+    n = current_factors.unfactored
+
     x = BigInt.new(0)
     y = BigInt.new(0)
     product = n.class.new(1)
@@ -144,8 +149,8 @@ class Primes
       if new_product == 0 || i % 100 == 0 || i == attempts
         test_gcd = n.gcd(new_product)
         if test_gcd > 1 && test_gcd < n
-          factor = n.class.new(test_gcd)
-          break
+          current_factors = current_factors.with_new_factor(test_gcd)
+          break if current_factors.complete?
         end
         product = n.class.new(1)
       else
@@ -155,88 +160,55 @@ class Primes
       end
     end
 
-    factor
+    current_factors
   end
 
   # NOTE(hofer): It appears that for this to be effective, a lot of
   # primes must be used, and I'm not going to precompute more than 1M
   # of them.
-  def self.pollard_p_minus_one(n : Int)
+  def self.pollard_p_minus_one(current_factors)
+    n = current_factors.unfactored
     x = n.class.new(2)
 
     small_primes.each do |p|
       x = Utils.power(x, p, n)
       factor = n.gcd(x - 1)
-      return factor if factor > 1 && factor < n
+      if factor > 1 && factor < n
+        current_factors = current_factors.with_new_factor(factor)
+        break if current_factors.complete?
+      end
     end
 
-    n.class.new(0)
+    current_factors
   end
 
-  def self.brute_force(n)
-    current_number = n
-    factors = [] of Array(typeof(n))
+  def self.brute_force(current_factors)
+    current_number = current_factors.unfactored
 
-    divisor = small_primes.last + 1
+    # NOTE(hofer): Only look at odd primes.
+    divisor = small_primes.last + 2
 
-    while current_number > 1
+    until current_factors.complete?
       max_divisor_candidate = Utils.binary_search_sqrt(current_number) + 1
       while divisor < max_divisor_candidate && current_number % divisor != 0
-        divisor += 1
+        divisor += 2
       end
 
       if divisor >= max_divisor_candidate # current_number is prime
-        factors << Utils.convert_type([current_number, 1], n)
-        current_number = typeof(n).new(1)
+        current_factors = current_factors.with_new_factor(current_number)
       else
-        new_factors = Utils.convert_type([divisor, Utils.find_multiplicity(current_number, divisor)], n)
-        factors << new_factors
-        current_number = Utils.divide_out_factors(current_number, [new_factors])
+        current_factors = current_factors.with_new_factor(divisor)
+        current_number = current_factors.unfactored
       end
     end
 
-    factors
-  end
-
-  def self.verify_factorization(n, factors)
-    factors_product = factors.reduce(n.class.new(1)) { |product, pair| pair.last.times { product *= pair.first }; product }
-    if factors_product != n
-      raise "Error: You've found a bug.  The factors we found (#{factors}) don't actually produce #{n} when multiplied together.  Please report this issue!"
-    end
-
-    factors.each do |pair|
-      unless pair.first.prime? || pair.first == n.class.new(-1)
-        raise "Error: You've found a bug.  At least one of the factors we found (#{factors}) was not prime (#{pair.first}).  Please report this issue!"
-      end
-    end
+    current_factors
   end
 
   def self.factorization(n : Int, options = ["trial_division", "pollard_rho"])
-    factors = internal_factorization(n, options)
-    verify_factorization(n, factors)
-    factors
-  end
-
-  def self.find_factor(current_number, factor_finder)
-    divisor = n.class.new(1)
-    while divisor > 0 && !current_number.prime?
-      divisor = factor_finder.call(current_number)
-      if divisor > 0
-        new_divisor_pair = Utils.convert_type([divisor, Utils.find_multiplicity(current_number, divisor)], n)
-        factors << new_divisor_pair
-        current_number = Utils.divide_out_factors(current_number, [new_divisor_pair])
-      end
-    end
-  end
-
-  # TODO(hofer): This method is getting pretty big (with some
-  # near-duplicate code), needs some refactoring, including merging it
-  # with the above factorization wrapper/assertion method.
-  private def self.internal_factorization(n : Int, options = ["trial_division", "pollard_rho"])
     raise "Can't factor zero!" if n == 0
 
     current_factors = Factorization.new(BigInt.new(n))
-
     return current_factors.factors if current_factors.complete?
 
     powers = Utils.perfect_power(current_factors.unfactored)
@@ -246,42 +218,21 @@ class Primes
       return current_factors.factors if current_factors.complete?
     end
 
-    # Trial division
-    trial_divisor = n.class.new(1)
-
-    while trial_divisor > 0 && !current_factors.complete?
-      trial_divisor = trial_division(current_factors.unfactored, trial_divisor)
-      if trial_divisor > 0
-        current_factors = current_factors.with_new_factor(trial_divisor)
-      end
-    end
-
+    current_factors = trial_division(current_factors)
     return current_factors.factors if current_factors.complete?
 
     if options.includes?("pollard_rho")
-      pollard_divisor = n.class.new(1)
-      while pollard_divisor > 0 && !current_factors.complete?
-        pollard_divisor = pollard_rho(current_factors.unfactored)
-        if pollard_divisor > 0
-          current_factors = current_factors.with_new_factor(pollard_divisor)
-        end
-      end
+      current_factors = pollard_rho(current_factors)
     end
-
     return current_factors.factors if current_factors.complete?
 
     if options.includes?("pollard_p_minus_one")
-      pollard_divisor = n.class.new(1)
-      while pollard_divisor > 0 && !current_factors.complete?
-        pollard_divisor = pollard_p_minus_one(current_factors.unfactored)
-        if pollard_divisor > 0
-          current_factors = current_factors.with_new_factor(pollard_divisor)
-        end
-      end
+      current_factors = pollard_p_minus_one(current_factors)
     end
+    return current_factors.factors if current_factors.complete?
 
     unless current_factors.complete?
-      brute_force(current_factors.unfactored).each { |pair| current_factors = current_factors.with_new_factor(pair.first) }
+      current_factors = brute_force(current_factors)
     end
 
     return current_factors.factors

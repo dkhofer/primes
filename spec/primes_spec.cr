@@ -83,22 +83,16 @@ describe "Primes" do
     end
 
     it "does trial division correctly" do
-      Primes.trial_division(1_098_413).should eq 563
-      Primes.trial_division(1_098_413, 564).should eq 1951
+      Primes.trial_division(Factorization.new(1_098_413)).factors.should eq [[563, 1], [1951, 1]]
     end
 
     it "does Pollard Rho correctly" do
-      Primes.pollard_rho(1_098_413).should eq 563
-      Primes.pollard_rho(BigInt.new(2) ** 67 - 1).should eq 193_707_721
+      Primes.pollard_rho(Factorization.new(1_098_413)).factors.should eq [[563, 1], [1951, 1]]
+      Primes.pollard_rho(Factorization.new(BigInt.new(2) ** 67 - 1)).factors.should eq [[193_707_721, 1], [761_838_257_287, 1]]
     end
 
     it "does Pollard P-1 correctly" do
-      Primes.pollard_p_minus_one(1_098_413).should eq 563
-    end
-
-    it "verifies factorizations" do
-      expect_raises { Primes.verify_factorization(1024, [[2, 4]]) }
-      expect_raises { Primes.verify_factorization(1024, [[32, 2]]) }
+      Primes.pollard_p_minus_one(Factorization.new(1_098_413)).factors.should eq [[563, 1], [1951, 1]]
     end
   end
 
