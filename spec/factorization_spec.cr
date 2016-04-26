@@ -13,7 +13,7 @@ describe "Factorization" do
   end
 
   it "initializes" do
-    result = Factorization.new(72, [[2, 3]])
+    result = Factorization.new(BigInt.new(72), [[BigInt.new(2), BigInt.new(3)]])
     result.n.should eq 72
     result.factors.should eq [[2, 3]]
     result.unfactored.should eq 9

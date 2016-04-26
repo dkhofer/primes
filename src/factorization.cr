@@ -3,15 +3,39 @@ class Factorization
   getter :factors
   getter :unfactored
 
-  def initialize(n, factors)
+  def initialize(n : BigInt)
+    @n = n
+
+    factors = [] of Array(typeof(n))
+    if n < 0
+      factors << Utils.convert_type([-1, 1], n)
+    end
+
+    if n.prime?
+      factors << Utils.convert_type([n, 1], n)
+    end
+
+    @factors = factors
+
+    @unfactored = n / self.class.product_of_factors(factors, n.class)
+  end
+
+  def initialize(n : BigInt, factors : Array(Array(BigInt)))
     @n = n
     self.class.verify_primality(factors)
     @factors = factors
     product = self.class.product_of_factors(factors, n.class)
-    unless n % product == 0
+    unless BigInt.new(n) % product == 0
       raise "Error: product of factors #{factors} does not evenly divide #{n}."
     end
-    @unfactored = n / product
+
+    quotient = BigInt.new(n) / product
+    if quotient.prime?
+      @factors << Utils.convert_type([quotient, BigInt.new(1)], n)
+      @unfactored = BigInt.new(1)
+    else
+      @unfactored = n / product
+    end
   end
 
   def self.verify_primality(factors)
@@ -23,5 +47,19 @@ class Factorization
 
   def self.product_of_factors(factors, n_class)
     factors.reduce(n_class.new(1)) { |product, pair| pair.last.times { product *= pair.first }; product }
+  end
+
+  def with_new_factor(factor)
+    raise "New factor (#{factor}) not prime!" unless factor.prime? || factor == -1
+    if factor == -1
+      multiplicity = 1
+    else
+      multiplicity = Utils.find_multiplicity(@n, factor)
+    end
+    Factorization.new(@n, @factors << Utils.convert_type([factor, multiplicity], @n))
+  end
+
+  def complete?
+    @unfactored == 1
   end
 end

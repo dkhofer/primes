@@ -67,7 +67,8 @@ module Utils
   def self.find_multiplicity(n, p)
     multiplicity = 0
     product = n.class.new(p)
-    while n % product == 0
+    # TODO(hofer): File bug about ^ incompatibility
+    while BigInt.new(n) % product == 0
       product *= p
       multiplicity += 1
     end

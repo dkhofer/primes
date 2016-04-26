@@ -1,4 +1,5 @@
 require "big_int"
+require "./factorization"
 require "./utils"
 
 class Primes
@@ -234,75 +235,56 @@ class Primes
   private def self.internal_factorization(n : Int, options = ["trial_division", "pollard_rho"])
     raise "Can't factor zero!" if n == 0
 
-    factors = [] of Array(typeof(n))
+    current_factors = Factorization.new(BigInt.new(n))
 
-    if n < 0
-      factors << Utils.convert_type([-1, 1], n)
-      n = n.abs
-    end
+    return current_factors.factors if current_factors.complete?
 
-    powers = Utils.perfect_power(n)
+    powers = Utils.perfect_power(current_factors.unfactored)
     unless powers.nil?
       base_factors = factorization(typeof(n).new(powers.first), options)
-      factors.concat(base_factors.map { |pair| [pair.first, pair.last * typeof(n).new(powers.last)] })
-      return factors
+      base_factors.each { |pair| current_factors = current_factors.with_new_factor(pair.first) }
+      return current_factors.factors if current_factors.complete?
     end
-
-    if n.prime?
-      factors << Utils.convert_type([n, 1], n)
-      return factors
-    end
-
-    current_number = n
 
     # Trial division
     trial_divisor = n.class.new(1)
 
-    while trial_divisor > 0 && !current_number.prime?
-      trial_divisor = trial_division(current_number, trial_divisor)
+    while trial_divisor > 0 && !current_factors.complete?
+      trial_divisor = trial_division(current_factors.unfactored, trial_divisor)
       if trial_divisor > 0
-        new_divisor_pair = Utils.convert_type([trial_divisor, Utils.find_multiplicity(current_number, trial_divisor)], n)
-        factors << new_divisor_pair
-        current_number = Utils.divide_out_factors(current_number, [new_divisor_pair])
+        current_factors = current_factors.with_new_factor(trial_divisor)
       end
     end
 
-    if current_number.prime?
-      factors << Utils.convert_type([current_number, 1], n)
-      return factors
-    end
+    return current_factors.factors if current_factors.complete?
 
-    if options.includes?("pollard_rho") && current_number > 1
+    if options.includes?("pollard_rho")
       pollard_divisor = n.class.new(1)
-      while pollard_divisor > 0 && !current_number.prime?
-        pollard_divisor = pollard_rho(current_number)
+      while pollard_divisor > 0 && !current_factors.complete?
+        pollard_divisor = pollard_rho(current_factors.unfactored)
         if pollard_divisor > 0
-          new_divisor_pair = Utils.convert_type([pollard_divisor, Utils.find_multiplicity(current_number, pollard_divisor)], n)
-          factors << new_divisor_pair
-          current_number = Utils.divide_out_factors(current_number, [new_divisor_pair])
+          current_factors = current_factors.with_new_factor(pollard_divisor)
         end
       end
     end
 
-    if options.includes?("pollard_p_minus_one") && current_number > 1
+    return current_factors.factors if current_factors.complete?
+
+    if options.includes?("pollard_p_minus_one")
       pollard_divisor = n.class.new(1)
-      while pollard_divisor > 0 && !current_number.prime?
-        pollard_divisor = pollard_p_minus_one(current_number)
+      while pollard_divisor > 0 && !current_factors.complete?
+        pollard_divisor = pollard_p_minus_one(current_factors.unfactored)
         if pollard_divisor > 0
-          new_divisor_pair = Utils.convert_type([pollard_divisor, Utils.find_multiplicity(current_number, pollard_divisor)], n)
-          factors << new_divisor_pair
-          current_number = Utils.divide_out_factors(current_number, [new_divisor_pair])
+          current_factors = current_factors.with_new_factor(pollard_divisor)
         end
       end
     end
 
-    if current_number.prime?
-      factors << Utils.convert_type([current_number, 1], n)
-    elsif current_number > 1
-      factors.concat(brute_force(current_number).map { |pair| Utils.convert_type(pair, n) })
+    unless current_factors.complete?
+      brute_force(current_factors.unfactored).each { |pair| current_factors = current_factors.with_new_factor(pair.first) }
     end
 
-    return factors
+    return current_factors.factors
   end
 end
 
