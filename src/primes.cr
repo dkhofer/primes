@@ -205,7 +205,7 @@ class Primes
     current_factors
   end
 
-  def self.factorization(n : Int, options = ["trial_division", "pollard_rho"])
+  def self.factorization(n : Int, options = ["trial_division", "pollard_rho", "brute_force"])
     raise "Can't factor zero!" if n == 0
 
     current_factors = Factorization.new(BigInt.new(n))
@@ -218,24 +218,20 @@ class Primes
       return current_factors.factors if current_factors.complete?
     end
 
-    current_factors = trial_division(current_factors)
-    return current_factors.factors if current_factors.complete?
+    methods_by_option = {
+      "trial_division" : ->trial_division(Factorization),
+      "pollard_rho" : ->pollard_rho(Factorization),
+      "pollard_p_minus_one" : ->pollard_p_minus_one(Factorization),
+      "brute_force" : ->brute_force(Factorization),
+    }
 
-    if options.includes?("pollard_rho")
-      current_factors = pollard_rho(current_factors)
-    end
-    return current_factors.factors if current_factors.complete?
-
-    if options.includes?("pollard_p_minus_one")
-      current_factors = pollard_p_minus_one(current_factors)
-    end
-    return current_factors.factors if current_factors.complete?
-
-    unless current_factors.complete?
-      current_factors = brute_force(current_factors)
+    options.each do |option|
+      method = methods_by_option[option]
+      current_factors = method.call(current_factors)
+      return current_factors.factors if current_factors.complete?
     end
 
-    return current_factors.factors
+    raise "Could not fully factor #{n}. Current status: #{current_factors}.  Please file a bug report at http://github.com/dkhofer/primes/issues"
   end
 end
 
