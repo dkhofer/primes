@@ -27,7 +27,7 @@ class Primes
     @@small_primes ||= compute_primes(10 ** 6)
   end
 
-  def self.set_small_primes(primes)
+  def self.set_small_primes(primes : Array(Int32))
     @@small_primes = primes
   end
 
