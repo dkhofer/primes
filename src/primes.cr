@@ -70,11 +70,7 @@ class Primes
     end
 
     samples.times do
-      if typeof(n) == BigInt
-        a = Utils.rand(n - 4) + 2
-      else
-        a = BigInt.new(2 + rand(n - 4))
-      end
+      a = Utils.rand(n - 4) + 2
       x = Utils.power(a, t, n)
 
       next if x == 1 || x == n - 1
